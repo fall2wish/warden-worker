@@ -131,13 +131,26 @@ function escapeHtml(str) {
   );
 }
 
+function formatSenderAddress(email, name) {
+  if (!email) return null;
+  const trimmedEmail = email.trim();
+  if (trimmedEmail.includes("<") && trimmedEmail.includes(">")) {
+    return trimmedEmail;
+  }
+  const fromName = name?.trim() || "Vaultwarden";
+  return `${fromName} <${trimmedEmail}>`;
+}
+
 async function handlePasswordHint(request, env, ctx) {
   const clonedRequest = request.clone();
   const worker = new RustWorker(ctx, env);
   const res = await worker.fetch(request);
 
   const resendApiKey = env.RESEND_API_KEY;
-  if (!resendApiKey) {
+  const mailFrom = env.MAIL_FROM;
+
+  // Optional: only send email if RESEND_API_KEY and MAIL_FROM are configured
+  if (!resendApiKey || !mailFrom) {
     return res;
   }
 
@@ -160,7 +173,7 @@ async function handlePasswordHint(request, env, ctx) {
       const recipientEmail = reqBody?.email;
 
       if (recipientEmail && hint) {
-        const sender = env.MAIL_FROM || "warden-noreply@142025.xyz";
+        const sender = formatSenderAddress(mailFrom, env.MAIL_FROM_NAME);
         const emailPayload = {
           from: sender,
           to: [recipientEmail],
