@@ -148,7 +148,7 @@ async function handlePasswordHint(request, env, ctx) {
 
   try {
     const data = await res.clone().json();
-    const msg = data?.message || "";
+    const msg = data?.error || data?.message || "";
     const prefix = "Your password hint is: ";
 
     if (msg.startsWith(prefix)) {
